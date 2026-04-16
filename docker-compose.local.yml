@@ -1,0 +1,97 @@
+services:
+  db:
+    image: docker.1ms.run/library/postgres:16-alpine
+    environment:
+      TZ: ${TZ}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  mock-epay:
+    build:
+      context: ./docker/mock-epay
+    environment:
+      PORT: 18080
+      PUBLIC_BASE_URL: http://localhost:18080
+      MERCHANT_PID: 1000001
+      MERCHANT_KEY: orion-key-local-epay-key
+    ports:
+      - "18080:18080"
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ./uploads:/app/uploads
+    ports:
+      - "8083:8083"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        BACKEND_URL: ${BACKEND_URL}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+    env_file:
+      - .env.docker
+    environment:
+      TZ: ${TZ}
+      BACKEND_URL: http://api:8083
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+      mock-epay:
+        condition: service_started
+    restart: unless-stopped
+
+  seed:
+    image: docker.1ms.run/library/postgres:16-alpine
+    env_file:
+      - .env.docker
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+      mock-epay:
+        condition: service_started
+    volumes:
+      - ./docker/postgres-init/10-seed-dev.sql:/seed/10-seed-dev.sql:ro
+      - ./apps/api/src/main/resources/data.sql:/seed/base-data.sql:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -eu
+        until psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -tAc "select 1 from information_schema.tables where table_schema='public' and table_name='users'" | grep -q 1; do
+          sleep 2
+        done
+        psql -v ON_ERROR_STOP=1 -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -f /seed/10-seed-dev.sql
+    restart: "no"
+
+volumes:
+  postgres_data:

@@ -23,7 +23,7 @@ services:
       PORT: 18080
       PUBLIC_BASE_URL: http://localhost:18080
       MERCHANT_PID: 1000001
-      MERCHANT_KEY: orion-key-local-epay-key
+      MERCHANT_KEY: demo-epay-key
     ports:
       - "18080:18080"
     restart: unless-stopped

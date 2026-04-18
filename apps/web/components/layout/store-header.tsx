@@ -68,6 +68,7 @@ export function StoreHeader({ siteName }: StoreHeaderProps) {
     { href: "/", label: t("nav.home") },
     { href: "/cart", label: t("nav.cart") },
     { href: "/order/query", label: t("nav.orders") },
+    { href: "/guestbook", label: t("nav.guestbook") },
   ]
 
   const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark")

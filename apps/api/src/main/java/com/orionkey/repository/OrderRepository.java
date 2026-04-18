@@ -32,6 +32,23 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT o FROM Order o WHERE o.status = com.orionkey.constant.OrderStatus.PENDING AND o.expiresAt < :now")
     List<Order> findExpiredOrders(@Param("now") LocalDateTime now);
 
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.couponCode = :couponCode " +
+            "AND o.couponReserved = true " +
+            "AND (o.couponUsageCounted = false OR o.couponUsageCounted IS NULL) " +
+            "AND o.status = com.orionkey.constant.OrderStatus.PENDING " +
+            "AND (o.expiresAt IS NULL OR o.expiresAt > :now)")
+    long countActiveCouponReservations(@Param("couponCode") String couponCode, @Param("now") LocalDateTime now);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.couponCode = :couponCode " +
+            "AND o.id <> :excludeOrderId " +
+            "AND o.couponReserved = true " +
+            "AND (o.couponUsageCounted = false OR o.couponUsageCounted IS NULL) " +
+            "AND o.status = com.orionkey.constant.OrderStatus.PENDING " +
+            "AND (o.expiresAt IS NULL OR o.expiresAt > :now)")
+    long countActiveCouponReservationsExcludingOrder(@Param("couponCode") String couponCode,
+                                                     @Param("excludeOrderId") UUID excludeOrderId,
+                                                     @Param("now") LocalDateTime now);
+
     long countByUserIdAndStatus(UUID userId, OrderStatus status);
 
     long countByClientIpAndStatus(String clientIp, OrderStatus status);

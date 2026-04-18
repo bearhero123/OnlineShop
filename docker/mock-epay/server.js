@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const PORT = Number(process.env.PORT || 18080);
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
 const MERCHANT_PID = process.env.MERCHANT_PID || "1000001";
-const MERCHANT_KEY = process.env.MERCHANT_KEY || "orion-key-local-epay-key";
+const MERCHANT_KEY = process.env.MERCHANT_KEY || "demo-epay-key";
 
 const ordersByTradeNo = new Map();
 const tradeNoByOrderId = new Map();

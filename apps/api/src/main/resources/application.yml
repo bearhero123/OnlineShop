@@ -80,6 +80,10 @@ turnstile:
   secret-key: ${TURNSTILE_SECRET_KEY:}
   site-key: ${TURNSTILE_SITE_KEY:}
 
+card:
+  api-base-url: ${CARD_API_BASE_URL:https://example.com/card-api}
+  api-key: ${CARD_API_KEY:}
+
 # Logging
 logging:
   level:

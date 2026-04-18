@@ -50,6 +50,12 @@ public class Order extends BaseEntity {
     @Column(precision = 10, scale = 2)
     private BigDecimal couponDiscount = BigDecimal.ZERO;
 
+    @Column(name = "coupon_reserved")
+    private Boolean couponReserved = false;
+
+    @Column(name = "coupon_usage_counted")
+    private Boolean couponUsageCounted = false;
+
     private LocalDateTime expiresAt;
 
     private LocalDateTime paidAt;

@@ -19,8 +19,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${upload.path:./uploads}")
     private String uploadPath;
 
-    /** CORS 允许的来源列表，逗号分隔。默认允许 localhost 开发环境。 */
-    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:3001}")
+    /** CORS 允许的来源列表，逗号分隔。默认允许本地开发常见入口。 */
+    @Value("${cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001}")
     private String corsAllowedOrigins;
 
     @Bean
@@ -43,7 +43,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
             registry.addMapping("/**")
                     .allowedOriginPatterns("*")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                    .allowedHeaders("Content-Type", "Authorization", "X-Session-Token")
+                    .allowedHeaders("Content-Type", "Authorization", "X-Session-Token", "X-Device-Id", "X-Turnstile-Token")
                     .exposedHeaders("X-Session-Token")
                     .allowCredentials(false)
                     .maxAge(3600);
@@ -51,7 +51,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
             registry.addMapping("/**")
                     .allowedOrigins(origins)
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                    .allowedHeaders("Content-Type", "Authorization", "X-Session-Token")
+                    .allowedHeaders("Content-Type", "Authorization", "X-Session-Token", "X-Device-Id", "X-Turnstile-Token")
                     .exposedHeaders("X-Session-Token")
                     .allowCredentials(true)
                     .maxAge(3600);

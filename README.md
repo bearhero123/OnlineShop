@@ -22,35 +22,10 @@ Automated Digital Goods Delivery Platform
 
 ---
 
-## 截图预览
+## 公开仓库说明
 
-<details open>
-<summary><b>前台页面</b></summary>
-<br>
-
-| 首页（亮色） | 首页（暗色） |
-|:---:|:---:|
-| ![首页-亮色](.github/assets/home-light.png) | ![首页-暗色](.github/assets/home-dark.png) |
-
-| 商品详情（亮色） | 商品详情（暗色） |
-|:---:|:---:|
-| ![详情-亮色](.github/assets/detail-light.png) | ![详情-暗色](.github/assets/detail-dark.png) |
-
-| 订单查询（亮色） | 订单查询（暗色） |
-|:---:|:---:|
-| ![订单查询-亮色](.github/assets/order-light.png) | ![订单查询-暗色](.github/assets/order-dark.png) |
-
-</details>
-
-<details open>
-<summary><b>管理后台</b></summary>
-<br>
-
-| Dashboard（亮色） | Dashboard（暗色） |
-|:---:|:---:|
-| ![后台-亮色](.github/assets/admin-light.png) | ![后台-暗色](.github/assets/admin-dark.png) |
-
-</details>
+此公开版本已移除演示商品、卡密、截图、私有联系信息和真实外部接口密钥。
+代码功能保持不变，如需本地演示数据，请在部署后自行通过后台创建。
 
 ---
 
@@ -246,7 +221,7 @@ pnpm dev:web
 ### 验证
 
 - 健康检查：`GET http://localhost:8083/api/categories`
-- 管理员登录：`admin` / `admin123`
+- 管理员登录：`admin` / `admin123`（首次启动后请立即修改）
 
 ---
 
@@ -262,14 +237,14 @@ docker compose --env-file .env.docker -f docker-compose.local.yml up -d --build
 
 如需调整端口、数据库密码或站点地址，直接修改 `.env.docker`。
 
-首次启动时会额外运行一个一次性的 `seed` 容器导入演示数据，包括管理员账号和示例商品；导入完成后该容器退出属于正常现象。
+首次启动时会额外运行一个一次性的 `seed` 容器导入基础数据，包括管理员账号、站点配置和本地支付通道示例；公开仓库默认不导入任何商品和卡密。导入完成后该容器退出属于正常现象。
 
 ### 2. 访问
 
 - 前台 / 管理后台：`http://localhost:3000`
 - 后端 API：`http://localhost:8083/api`
 - 健康检查：`GET http://localhost:8083/api/categories`
-- 管理员登录：`admin` / `admin123`
+- 管理员登录：`admin` / `admin123`（首次启动后请立即修改）
 
 ### 3. 常用命令
 
@@ -324,18 +299,6 @@ docker compose -f docker-compose.prod.yml up -d    # 后台启动
 ```
 
 > 上传文件通过卷挂载 `./uploads` 持久化，容器重建不会丢失数据。前端容器通过 Docker 内部网络 `http://api:8083` 访问后端。生产环境建议在前面加一层 Nginx 反向代理处理 HTTPS 和静态资源。
-
----
-
-## AI 商店推荐（非 Demo 演示）
-
-[![Orion Key Shop](https://img.shields.io/badge/Orion%20Key%20Shop-在线商店-FF6B00?style=for-the-badge)](https://www.orionkey.shop/)
-
----
-
-## TG 交流群组
-
-[![Telegram](https://img.shields.io/badge/Telegram-群组-26A5E4?logo=telegram&logoColor=white)](https://t.me/+bFPWrYnruDIwZWRh)
 
 ---
 

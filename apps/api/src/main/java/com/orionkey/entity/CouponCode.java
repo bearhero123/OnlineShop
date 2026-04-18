@@ -33,6 +33,12 @@ public class CouponCode extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
+    @Column(name = "max_uses")
+    private Integer maxUses = 1;
+
+    @Column(name = "used_count")
+    private Integer usedCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CouponStatus status = CouponStatus.AVAILABLE;
@@ -50,6 +56,9 @@ public class CouponCode extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String remark;
+
+    @Column(name = "applicable_product_ids", columnDefinition = "TEXT")
+    private String applicableProductIds;
 
     private int isDeleted = 0;
 }

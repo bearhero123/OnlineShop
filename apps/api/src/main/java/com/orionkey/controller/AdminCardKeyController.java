@@ -63,6 +63,11 @@ public class AdminCardKeyController {
         return ApiResponse.success(Map.of("invalidated_count", count));
     }
 
+    @PostMapping("/{id}/cancel-card")
+    public ApiResponse<?> cancelSoldCard(@PathVariable UUID id) {
+        return ApiResponse.success(adminCardKeyService.cancelSoldCardKey(id, RequestContext.getUserId()));
+    }
+
     @GetMapping("/by-order/{orderId}")
     public ApiResponse<?> getCardKeysByOrder(@PathVariable UUID orderId) {
         return ApiResponse.success(adminCardKeyService.getCardKeysByOrder(orderId));

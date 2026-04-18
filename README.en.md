@@ -22,35 +22,10 @@
 
 ---
 
-## Screenshots
+## Public Repo Notes
 
-<details open>
-<summary><b>Storefront</b></summary>
-<br>
-
-| Home (Light) | Home (Dark) |
-|:---:|:---:|
-| ![Home Light](.github/assets/home-light.png) | ![Home Dark](.github/assets/home-dark.png) |
-
-| Product Detail (Light) | Product Detail (Dark) |
-|:---:|:---:|
-| ![Detail Light](.github/assets/detail-light.png) | ![Detail Dark](.github/assets/detail-dark.png) |
-
-| Order Query (Light) | Order Query (Dark) |
-|:---:|:---:|
-| ![Order Light](.github/assets/order-light.png) | ![Order Dark](.github/assets/order-dark.png) |
-
-</details>
-
-<details open>
-<summary><b>Admin Panel</b></summary>
-<br>
-
-| Dashboard (Light) | Dashboard (Dark) |
-|:---:|:---:|
-| ![Admin Light](.github/assets/admin-light.png) | ![Admin Dark](.github/assets/admin-dark.png) |
-
-</details>
+This public sync removes demo products, card keys, screenshots, private contact links, and real external integration secrets.
+The application code remains intact. If you need sample business data locally, create it yourself after deployment.
 
 ---
 
@@ -122,8 +97,7 @@ orion-key/
 │
 ├── docker-compose.prod.yml           # Production Docker Compose
 ├── .env.example                      # Environment variable template
-├── pnpm-workspace.yaml               # Monorepo workspace declaration
-└── ui_picture/                       # Project screenshots
+└── pnpm-workspace.yaml               # Monorepo workspace declaration
 ```
 
 ---
@@ -165,6 +139,7 @@ psql -U orionkey -d orion_key -f apps/api/src/main/resources/data.sql
 ```
 
 > The SQL uses `WHERE NOT EXISTS` guards — safe to run multiple times.
+> The public repository intentionally does not preseed any products or card keys.
 
 ### JWT Authentication
 
@@ -250,7 +225,7 @@ pnpm dev:web
 ### Verify
 
 - Health check: `GET http://localhost:8083/api/categories`
-- Admin login: `admin` / `admin123`
+- Admin login: `admin` / `admin123` (change it immediately after first startup)
 
 ---
 
@@ -297,18 +272,6 @@ docker compose -f docker-compose.prod.yml up -d    # Start in background
 ```
 
 > Uploaded files are persisted via the `./uploads` volume mount — data survives container rebuilds. The frontend container accesses the backend via Docker internal network at `http://api:8083`. For production, add an Nginx reverse proxy in front for HTTPS and static assets.
-
----
-
-## AI Store (Not a Demo)
-
-[![Orion Key Shop](https://img.shields.io/badge/Orion%20Key%20Shop-Visit%20Store-FF6B00?style=for-the-badge)](https://www.orionkey.shop/)
-
----
-
-## Telegram Group
-
-[![Telegram](https://img.shields.io/badge/Telegram-Group-26A5E4?logo=telegram&logoColor=white)](https://t.me/+bFPWrYnruDIwZWRh)
 
 ---
 

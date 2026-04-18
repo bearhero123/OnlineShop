@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -37,4 +38,14 @@ public class CardKey extends BaseEntity {
     private UUID importBatchId;
 
     private LocalDateTime soldAt;
+
+    @Column(length = 32)
+    private String cardCancelStatus;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal cardCancelRefundAmount;
+
+    private LocalDateTime cardCancelledAt;
+
+    private UUID cardCancelledBy;
 }

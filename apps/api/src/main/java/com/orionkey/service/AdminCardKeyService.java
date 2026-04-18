@@ -18,6 +18,8 @@ public interface AdminCardKeyService {
 
     int batchInvalidateCardKeys(UUID productId, UUID specId);
 
+    Map<String, Object> cancelSoldCardKey(UUID id, UUID operatedBy);
+
     List<?> getCardKeysByOrder(UUID orderId);
 
     PageResult<?> listCardKeys(UUID productId, UUID specId, int page, int pageSize);

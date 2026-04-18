@@ -10,8 +10,8 @@
 --    则需将下方 password_hash 改为明文 'admin123'
 -- ────────────────────────────────────────
 INSERT INTO users (id, username, email, password_hash, role, points, is_deleted, failed_login_attempts, lock_until, created_at, updated_at)
-SELECT gen_random_uuid(), 'admin', 'admin@orionkey.com',
-       '123456#',
+SELECT gen_random_uuid(), 'admin', 'admin@example.com',
+       'admin123',
        'ADMIN', 0, 0, 0, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
@@ -40,7 +40,7 @@ SELECT gen_random_uuid(), 'footer_text', '由开源 Orion Key 提供服务', 'si
     WHERE NOT EXISTS (SELECT 1 FROM site_configs WHERE config_key = 'footer_text');
 
 INSERT INTO site_configs (id, config_key, config_value, config_group, created_at, updated_at)
-SELECT gen_random_uuid(), 'github_url', 'https://github.com/RivenLau/orion-key', 'site', NOW(), NOW()
+SELECT gen_random_uuid(), 'github_url', 'https://github.com/bearhero123/OnlineShop', 'site', NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM site_configs WHERE config_key = 'github_url');
 
 -- 积分功能总开关 (true/false)
@@ -178,95 +178,9 @@ SELECT gen_random_uuid(), 'GBP', '英镑', '£', true, 4, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM currencies WHERE code = 'GBP');
 
 -- ────────────────────────────────────────
--- 5. 测试数据：商品分类 + 商品 + 卡密（开发/演示用，生产可删除此段）
+-- 5. 公开仓库说明
+--    为避免泄露业务资料，公开版本不预置任何商品、卡密或演示库存。
+--    如需本地演示，请在部署后自行通过后台创建分类、商品与库存。
 -- ────────────────────────────────────────
-
--- 分类：游戏充值
-INSERT INTO product_categories (id, name, sort_order, is_deleted, created_at, updated_at)
-SELECT 'a0000000-0000-0000-0000-000000000001'::uuid, '游戏充值', 1, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM product_categories WHERE name = '游戏充值');
-
--- 分类：软件激活
-INSERT INTO product_categories (id, name, sort_order, is_deleted, created_at, updated_at)
-SELECT 'a0000000-0000-0000-0000-000000000002'::uuid, '软件激活', 2, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM product_categories WHERE name = '软件激活');
-
--- 分类：会员订阅
-INSERT INTO product_categories (id, name, sort_order, is_deleted, created_at, updated_at)
-SELECT 'a0000000-0000-0000-0000-000000000003'::uuid, '会员订阅', 3, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM product_categories WHERE name = '会员订阅');
-
--- 商品1：Steam 50元充值卡（游戏充值分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000001'::uuid, 'Steam 50元充值卡',
-       'Steam 平台50元面值充值卡，购买后即时发送卡密，请在Steam客户端激活使用。',
-       50.00, 'a0000000-0000-0000-0000-000000000001'::uuid, 5, false, true, 1, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Steam 50元充值卡');
-
--- 商品2：Steam 100元充值卡（游戏充值分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000002'::uuid, 'Steam 100元充值卡',
-       'Steam 平台100元面值充值卡，购买后即时发送卡密。',
-       100.00, 'a0000000-0000-0000-0000-000000000001'::uuid, 5, false, true, 2, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Steam 100元充值卡');
-
--- 商品3：Windows 11 Pro 激活码（软件激活分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000003'::uuid, 'Windows 11 Pro 激活码',
-       'Windows 11 专业版正版激活码，支持全新安装和升级激活，永久有效。',
-       298.00, 'a0000000-0000-0000-0000-000000000002'::uuid, 3, true, true, 1, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Windows 11 Pro 激活码');
-
--- 商品4：Office 365 一年订阅（软件激活分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000004'::uuid, 'Office 365 一年订阅',
-       'Microsoft 365 个人版一年订阅激活码，含 Word/Excel/PowerPoint 全套。',
-       399.00, 'a0000000-0000-0000-0000-000000000002'::uuid, 3, false, true, 2, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Office 365 一年订阅');
-
--- 商品5：Netflix 高级会员月卡（会员订阅分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000005'::uuid, 'Netflix 高级会员月卡',
-       'Netflix Premium 高级会员一个月，支持4K HDR，最多4台设备同时观看。',
-       89.00, 'a0000000-0000-0000-0000-000000000003'::uuid, 5, false, true, 1, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Netflix 高级会员月卡');
-
--- 商品6：Spotify 会员季卡（会员订阅分类）
-INSERT INTO products (id, title, description, base_price, category_id, low_stock_threshold, wholesale_enabled, is_enabled, sort_order, is_deleted, created_at, updated_at)
-SELECT 'b0000000-0000-0000-0000-000000000006'::uuid, 'Spotify 会员季卡',
-       'Spotify Premium 三个月会员卡，无广告畅听，支持离线下载。',
-       78.00, 'a0000000-0000-0000-0000-000000000003'::uuid, 5, false, true, 2, 0, NOW(), NOW()
-WHERE NOT EXISTS (SELECT 1 FROM products WHERE title = 'Spotify 会员季卡');
-
--- 每个商品各插入 3 张测试卡密（库存）
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000001'::uuid, 'STEAM50-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'STEAM50-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000001'::uuid);
-
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000002'::uuid, 'STEAM100-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'STEAM100-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000002'::uuid);
-
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000003'::uuid, 'WIN11PRO-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'WIN11PRO-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000003'::uuid);
-
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000004'::uuid, 'OFFICE365-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'OFFICE365-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000004'::uuid);
-
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000005'::uuid, 'NETFLIX-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'NETFLIX-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000005'::uuid);
-
-INSERT INTO card_keys (id, product_id, content, status, created_at, updated_at)
-SELECT gen_random_uuid(), 'b0000000-0000-0000-0000-000000000006'::uuid, 'SPOTIFY-TEST-' || i, 'AVAILABLE', NOW(), NOW()
-FROM generate_series(1, 3) AS i
-WHERE NOT EXISTS (SELECT 1 FROM card_keys WHERE content = 'SPOTIFY-TEST-1' AND product_id = 'b0000000-0000-0000-0000-000000000006'::uuid);
 
 commit;

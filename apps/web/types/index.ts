@@ -200,6 +200,21 @@ export interface DeliverResult {
   groups: DeliverResultGroup[]
 }
 
+export interface GuestbookMessageItem {
+  id: string
+  nickname: string | null
+  content: string
+  product_summary: string | null
+  masked_order_id: string
+  created_at: string
+}
+
+export interface GuestbookCreateRequest {
+  order_id: string
+  nickname?: string
+  content: string
+}
+
 // ============================================================
 // Currency
 // ============================================================
@@ -390,6 +405,10 @@ export interface CardKeyListItem {
   order_id: string | null
   created_at: string
   sold_at: string | null
+  card_cancel_status?: string | null
+  card_cancel_refund_amount?: number | null
+  card_cancelled_at?: string | null
+  card_cancelled_by?: string | null
 }
 
 export interface CardImportBatch {
@@ -412,6 +431,15 @@ export interface OrderCardKey {
   status: 'AVAILABLE' | 'LOCKED' | 'SOLD' | 'INVALID'
 }
 
+export interface CardKeyCancelResult {
+  card_key_id: string
+  code: string
+  status: string | null
+  refund_amount: number | null
+  cancelled_at: string | null
+  already_cancelled: boolean
+}
+
 // ============================================================
 // Admin Orders
 // ============================================================
@@ -422,12 +450,32 @@ export interface AdminOrderItem extends OrderDetail {
   is_risk_flagged: boolean
 }
 
+export interface AdminGuestbookItem {
+  id: string
+  order_id: string
+  order_email: string | null
+  order_status: OrderStatus | null
+  nickname: string | null
+  content: string
+  product_summary: string | null
+  is_visible: boolean
+  created_at: string
+}
+
+export interface CouponApplicableProduct {
+  id: string
+  title: string
+}
+
 export interface AdminCouponItem {
   id: string
   code: string
   name: string
   discount_type: CouponDiscountType
   discount_value: number
+  max_uses: number
+  used_count: number
+  remaining_uses: number
   status: CouponStatus
   is_enabled: boolean
   remark: string | null
@@ -435,6 +483,7 @@ export interface AdminCouponItem {
   reserved_at: string | null
   used_order_id: string | null
   used_at: string | null
+  applicable_products: CouponApplicableProduct[]
   created_at: string
 }
 

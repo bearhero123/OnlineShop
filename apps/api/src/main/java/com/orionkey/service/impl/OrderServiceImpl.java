@@ -136,7 +136,9 @@ public class OrderServiceImpl implements OrderService {
         item.setSubtotal(totalAmount);
         orderItemRepository.save(item);
 
-        applyCouponToOrder(order, couponCode, totalAmount);
+        applyCouponToOrder(order, couponCode, List.of(
+                new CouponService.CouponOrderLine(productId, totalAmount)
+        ));
         settleZeroAmountOrder(order);
 
         return buildOrderResult(order, device);
@@ -192,6 +194,7 @@ public class OrderServiceImpl implements OrderService {
         int expireMinutes = getConfigInt("order_expire_minutes", 15);
         BigDecimal totalAmount = BigDecimal.ZERO;
         String couponCode = couponService.normalizeCode((String) req.get("coupon_code"));
+        List<CouponService.CouponOrderLine> couponOrderLines = new ArrayList<>();
 
         Order order = new Order();
         order.setUserId(userId);
@@ -250,6 +253,7 @@ public class OrderServiceImpl implements OrderService {
             item.setUnitPrice(unitPrice);
             item.setSubtotal(subtotal);
             orderItemRepository.save(item);
+            couponOrderLines.add(new CouponService.CouponOrderLine(ci.getProductId(), subtotal));
         }
 
         // F16: 订单金额必须为正数 — 防止负数商品价格叠加导致极低金额下单
@@ -260,7 +264,7 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(totalAmount);
         order.setActualAmount(totalAmount);
         orderRepository.save(order);
-        applyCouponToOrder(order, couponCode, totalAmount);
+        applyCouponToOrder(order, couponCode, couponOrderLines);
         settleZeroAmountOrder(order);
 
         // Clear cart after order creation to prevent duplicate orders from same cart items
@@ -299,7 +303,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         BigDecimal totalAmount = getUnitPrice(product, specId, quantity).multiply(BigDecimal.valueOf(quantity));
-        CouponService.CouponApplication application = couponService.previewCoupon(couponCode, totalAmount);
+        CouponService.CouponApplication application = couponService.previewCoupon(couponCode, List.of(
+                new CouponService.CouponOrderLine(productId, totalAmount)
+        ));
         return buildCouponPreview(totalAmount, application);
     }
 
@@ -322,6 +328,7 @@ public class OrderServiceImpl implements OrderService {
 
         int maxQuantity = getMaxPurchasePerUser();
         BigDecimal totalAmount = BigDecimal.ZERO;
+        List<CouponService.CouponOrderLine> couponOrderLines = new ArrayList<>();
         for (CartItem ci : cartItems) {
             if (ci.getQuantity() < 1 || ci.getQuantity() > maxQuantity) {
                 throw new BusinessException(ErrorCode.PURCHASE_LIMIT_EXCEEDED,
@@ -344,10 +351,12 @@ public class OrderServiceImpl implements OrderService {
             }
 
             BigDecimal unitPrice = getUnitPrice(product, ci.getSpecId(), ci.getQuantity());
-            totalAmount = totalAmount.add(unitPrice.multiply(BigDecimal.valueOf(ci.getQuantity())));
+            BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(ci.getQuantity()));
+            totalAmount = totalAmount.add(subtotal);
+            couponOrderLines.add(new CouponService.CouponOrderLine(ci.getProductId(), subtotal));
         }
 
-        CouponService.CouponApplication application = couponService.previewCoupon(couponCode, totalAmount);
+        CouponService.CouponApplication application = couponService.previewCoupon(couponCode, couponOrderLines);
         return buildCouponPreview(totalAmount, application);
     }
 
@@ -597,11 +606,11 @@ public class OrderServiceImpl implements OrderService {
                 }).orElse(defaultValue);
     }
 
-    private void applyCouponToOrder(Order order, String couponCode, BigDecimal totalAmount) {
+    private void applyCouponToOrder(Order order, String couponCode, List<CouponService.CouponOrderLine> orderLines) {
         if (couponCode == null) {
             return;
         }
-        CouponService.CouponApplication application = couponService.reserveCoupon(couponCode, order.getId(), totalAmount);
+        CouponService.CouponApplication application = couponService.reserveCoupon(couponCode, order.getId(), orderLines);
         order.setCouponCode(application.couponCode());
         order.setCouponDiscount(application.discountAmount());
         order.setActualAmount(application.actualAmount());

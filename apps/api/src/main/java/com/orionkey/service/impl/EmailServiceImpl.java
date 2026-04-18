@@ -38,7 +38,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${mail.enabled:false}")
     private boolean mailEnabled;
 
-    @Value("${mail.site-url:https://orionkey.shop}")
+    @Value("${mail.site-url:https://example.com}")
     private String siteUrl;
 
     @Value("${spring.mail.username:}")

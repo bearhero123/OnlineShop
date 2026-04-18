@@ -21,6 +21,7 @@ import {
   Moon,
   Globe,
   Palette,
+  MessageSquare,
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
@@ -36,6 +37,7 @@ const navItems: { labelKey: TranslationKey; href: string; icon: typeof LayoutDas
   { labelKey: "admin.users", href: "/admin/users", icon: Users },
   { labelKey: "admin.payment", href: "/admin/payment-channels", icon: CreditCard },
   { labelKey: "admin.coupons", href: "/admin/coupons", icon: Tag },
+  { labelKey: "admin.guestbook", href: "/admin/guestbook", icon: MessageSquare },
   { labelKey: "admin.siteConfig", href: "/admin/site-config", icon: Settings },
   { labelKey: "admin.risk", href: "/admin/risk", icon: ShieldAlert },
   { labelKey: "admin.logs", href: "/admin/operation-logs", icon: ScrollText },

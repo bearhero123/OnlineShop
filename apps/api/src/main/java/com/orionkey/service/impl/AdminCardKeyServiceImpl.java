@@ -10,13 +10,21 @@ import com.orionkey.entity.Product;
 import com.orionkey.exception.BusinessException;
 import com.orionkey.repository.*;
 import com.orionkey.service.AdminCardKeyService;
+import com.orionkey.service.CardProxyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Slf4j
@@ -29,6 +37,7 @@ public class AdminCardKeyServiceImpl implements AdminCardKeyService {
     private final ProductRepository productRepository;
     private final ProductSpecRepository productSpecRepository;
     private final OrderItemRepository orderItemRepository;
+    private final CardProxyService cardProxyService;
 
     @Override
     public List<?> getStockSummary(UUID productId, UUID specId) {
@@ -182,6 +191,34 @@ public class AdminCardKeyServiceImpl implements AdminCardKeyService {
     }
 
     @Override
+    @Transactional
+    public Map<String, Object> cancelSoldCardKey(UUID id, UUID operatedBy) {
+        CardKey key = cardKeyRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "卡密不存在"));
+
+        if (key.getStatus() != CardKeyStatus.SOLD) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "仅已售出的卡密允许销卡");
+        }
+
+        if (!StringUtils.hasText(key.getContent())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "卡密内容为空，无法发起销卡");
+        }
+
+        if (StringUtils.hasText(key.getCardCancelStatus()) || key.getCardCancelledAt() != null) {
+            return buildCancelResult(key, true);
+        }
+
+        Map<String, Object> result = cardProxyService.cancelCardByCode(key.getContent());
+        key.setCardCancelStatus((String) result.get("status"));
+        key.setCardCancelRefundAmount(asBigDecimal(result.get("refund_amount")));
+        key.setCardCancelledAt(parseCancelledAt((String) result.get("cancelled_at")));
+        key.setCardCancelledBy(operatedBy);
+        cardKeyRepository.save(key);
+
+        return buildCancelResult(key, false);
+    }
+
+    @Override
     public List<?> getCardKeysByOrder(UUID orderId) {
         List<CardKey> keys = cardKeyRepository.findByOrderId(orderId);
         List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
@@ -214,6 +251,10 @@ public class AdminCardKeyServiceImpl implements AdminCardKeyService {
             map.put("order_id", k.getOrderId());
             map.put("created_at", k.getCreatedAt());
             map.put("sold_at", k.getSoldAt());
+            map.put("card_cancel_status", k.getCardCancelStatus());
+            map.put("card_cancel_refund_amount", k.getCardCancelRefundAmount());
+            map.put("card_cancelled_at", k.getCardCancelledAt());
+            map.put("card_cancelled_by", k.getCardCancelledBy());
             return map;
         }).toList();
         return PageResult.of(keyPage, list);
@@ -244,5 +285,51 @@ public class AdminCardKeyServiceImpl implements AdminCardKeyService {
         map.put("locked", locked);
         map.put("invalid", invalid);
         return map;
+    }
+
+    private Map<String, Object> buildCancelResult(CardKey key, boolean alreadyCancelled) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("card_key_id", key.getId());
+        result.put("code", key.getContent());
+        result.put("status", key.getCardCancelStatus());
+        result.put("refund_amount", key.getCardCancelRefundAmount());
+        result.put("cancelled_at", key.getCardCancelledAt());
+        result.put("already_cancelled", alreadyCancelled);
+        return result;
+    }
+
+    private BigDecimal asBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (value instanceof Number number) {
+            return BigDecimal.valueOf(number.doubleValue());
+        }
+        try {
+            return new BigDecimal(String.valueOf(value));
+        } catch (NumberFormatException ex) {
+            throw new BusinessException(ErrorCode.SERVER_ERROR, "外部销卡接口返回了无效退款金额", HttpStatus.BAD_GATEWAY);
+        }
+    }
+
+    private LocalDateTime parseCancelledAt(String value) {
+        if (!StringUtils.hasText(value)) {
+            return LocalDateTime.now();
+        }
+
+        try {
+            return OffsetDateTime.parse(value)
+                    .atZoneSameInstant(ZoneId.systemDefault())
+                    .toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDateTime.parse(value);
+            } catch (DateTimeParseException ex) {
+                return LocalDateTime.now();
+            }
+        }
     }
 }

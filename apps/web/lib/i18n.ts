@@ -11,6 +11,7 @@ const zh = {
   "nav.myOrders": "购买记录",
   "nav.logout": "退出登录",
   "nav.admin": "管理后台",
+  "nav.guestbook": "留言板",
 
   // Home
   "home.title": "全部商品",
@@ -137,6 +138,32 @@ const zh = {
   "order.contactTelegram": "联系 Telegram 客服",
   "order.contactEmail": "发送邮件",
   "order.paymentMethod": "支付方式",
+
+  // Guestbook
+  "guestbook.title": "留言板",
+  "guestbook.desc": "购买过的用户可使用订单号提交建议，我们会持续优化体验。",
+  "guestbook.formTitle": "提交留言建议",
+  "guestbook.formDesc": "仅支持已支付或已发货的订单号。",
+  "guestbook.orderId": "订单号",
+  "guestbook.orderIdPlaceholder": "请输入有效订单号",
+  "guestbook.nickname": "昵称",
+  "guestbook.nicknamePlaceholder": "可选，默认显示为已购用户",
+  "guestbook.nicknameHint": "不填则显示为已购用户",
+  "guestbook.content": "留言内容",
+  "guestbook.contentPlaceholder": "欢迎告诉我们你的购买体验、商品建议，或希望新增的功能...",
+  "guestbook.contentTooShort": "留言内容至少需要 5 个字",
+  "guestbook.submit": "提交留言",
+  "guestbook.submitting": "提交中...",
+  "guestbook.submitSuccess": "留言已提交，感谢你的建议",
+  "guestbook.recentTitle": "最近留言",
+  "guestbook.recentDesc": "以下是公开展示的购买后留言，请不要填写卡密、邮箱等敏感信息。",
+  "guestbook.empty": "暂时还没有留言，欢迎成为第一位留言的用户。",
+  "guestbook.orderRule": "需提供已支付或已发货的订单号",
+  "guestbook.buyerOnly": "仅限购买过的用户留言",
+  "guestbook.publicHint": "留言会公开展示，请勿填写卡密、邮箱等敏感信息",
+  "guestbook.defaultName": "已购用户",
+  "guestbook.orderPrefix": "订单",
+  "guestbook.product": "关联商品",
 
   // Payment
   "payment.title": "支付订单",
@@ -278,6 +305,7 @@ const zh = {
   "admin.users": "用户管理",
   "admin.payment": "支付渠道",
   "admin.coupons": "优惠码",
+  "admin.guestbook": "留言板",
   "admin.siteConfig": "网站设置",
   "admin.logs": "操作日志",
   "admin.risk": "风控管理",
@@ -445,7 +473,14 @@ const zh = {
 
   // Admin Payment Channels
   "admin.paymentDesc": "配置支付方式",
-  "admin.couponsDesc": "创建并分发一次性优惠码",
+  "admin.couponsDesc": "创建并管理可多次使用的优惠码",
+  "admin.guestbookDesc": "查看用户留言建议，并控制前台是否展示",
+  "admin.messageContent": "留言内容",
+  "admin.visibility": "展示状态",
+  "admin.visible": "显示中",
+  "admin.hidden": "已隐藏",
+  "admin.noGuestbookData": "暂无留言数据",
+  "admin.productSummary": "关联商品",
   "admin.addChannel": "添加渠道",
   "admin.editChannelTitle": "编辑支付渠道",
   "admin.addChannelTitle": "添加支付渠道",
@@ -554,7 +589,7 @@ const zh = {
   "error.unpaidOrderExists": "您有未支付的订单，请先完成支付或等待过期",
   "error.cartEmpty": "购物车为空",
   "error.couponInvalid": "优惠码无效或已失效",
-  "error.couponUnavailable": "优惠码已被使用或暂时不可用",
+  "error.couponUnavailable": "优惠码已达到上限或暂时不可用",
   "error.channelUnavailable": "支付渠道不可用",
 } as const
 
@@ -569,6 +604,7 @@ const en: Record<keyof typeof zh, string> = {
   "nav.myOrders": "My Orders",
   "nav.logout": "Logout",
   "nav.admin": "Admin",
+  "nav.guestbook": "Guestbook",
 
   // Home
   "home.title": "All Products",
@@ -695,6 +731,32 @@ const en: Record<keyof typeof zh, string> = {
   "order.contactTelegram": "Contact us on Telegram",
   "order.contactEmail": "Send email",
   "order.paymentMethod": "Payment Method",
+
+  // Guestbook
+  "guestbook.title": "Guestbook",
+  "guestbook.desc": "Customers who have purchased can leave suggestions with their order number.",
+  "guestbook.formTitle": "Leave a Suggestion",
+  "guestbook.formDesc": "Only paid or delivered orders are accepted.",
+  "guestbook.orderId": "Order No.",
+  "guestbook.orderIdPlaceholder": "Enter a valid order number",
+  "guestbook.nickname": "Nickname",
+  "guestbook.nicknamePlaceholder": "Optional, defaults to Verified Buyer",
+  "guestbook.nicknameHint": "Leave blank to display as Verified Buyer",
+  "guestbook.content": "Message",
+  "guestbook.contentPlaceholder": "Tell us about your purchase experience, product suggestions, or features you'd like to see...",
+  "guestbook.contentTooShort": "Please enter at least 5 characters",
+  "guestbook.submit": "Submit",
+  "guestbook.submitting": "Submitting...",
+  "guestbook.submitSuccess": "Message submitted. Thanks for the suggestion.",
+  "guestbook.recentTitle": "Recent Messages",
+  "guestbook.recentDesc": "These messages are publicly visible. Please do not include keys, emails, or other sensitive data.",
+  "guestbook.empty": "No messages yet. Be the first verified customer to leave one.",
+  "guestbook.orderRule": "Requires a paid or delivered order number",
+  "guestbook.buyerOnly": "Verified buyers only",
+  "guestbook.publicHint": "Messages are public. Do not include keys, emails, or other sensitive data.",
+  "guestbook.defaultName": "Verified Buyer",
+  "guestbook.orderPrefix": "Order",
+  "guestbook.product": "Related Product",
 
   // Payment
   "payment.title": "Payment",
@@ -836,6 +898,7 @@ const en: Record<keyof typeof zh, string> = {
   "admin.users": "Users",
   "admin.payment": "Payment",
   "admin.coupons": "Coupons",
+  "admin.guestbook": "Guestbook",
   "admin.siteConfig": "Site Config",
   "admin.logs": "Operation Logs",
   "admin.risk": "Risk Control",
@@ -1003,7 +1066,14 @@ const en: Record<keyof typeof zh, string> = {
 
   // Admin Payment Channels
   "admin.paymentDesc": "Configure payment methods",
-  "admin.couponsDesc": "Create and distribute one-time coupon codes",
+  "admin.couponsDesc": "Create and manage reusable coupon codes",
+  "admin.guestbookDesc": "Review customer suggestions and control whether they are shown on the storefront",
+  "admin.messageContent": "Message",
+  "admin.visibility": "Visibility",
+  "admin.visible": "Visible",
+  "admin.hidden": "Hidden",
+  "admin.noGuestbookData": "No guestbook messages",
+  "admin.productSummary": "Related Product",
   "admin.addChannel": "Add Channel",
   "admin.editChannelTitle": "Edit Payment Channel",
   "admin.addChannelTitle": "Add Payment Channel",
@@ -1112,7 +1182,7 @@ const en: Record<keyof typeof zh, string> = {
   "error.unpaidOrderExists": "You have an unpaid order, please complete payment or wait for expiration",
   "error.cartEmpty": "Shopping cart is empty",
   "error.couponInvalid": "Coupon is invalid or expired",
-  "error.couponUnavailable": "Coupon has been used or is temporarily unavailable",
+  "error.couponUnavailable": "Coupon has reached its usage limit or is temporarily unavailable",
   "error.channelUnavailable": "Payment channel unavailable",
 }
 

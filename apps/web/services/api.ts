@@ -22,6 +22,7 @@ import type {
   SalesTrend,
   CardKeyStockSummary,
   CardKeyListItem,
+  CardKeyCancelResult,
   CardImportBatch,
   OrderCardKey,
   AdminUserItem,
@@ -36,6 +37,9 @@ import type {
   CouponPreviewResult,
   AdminCouponItem,
   CouponDiscountType,
+  GuestbookMessageItem,
+  GuestbookCreateRequest,
+  AdminGuestbookItem,
 } from "@/types"
 
 // ============================================================
@@ -389,6 +393,19 @@ export const orderApi = {
 }
 
 // ============================================================
+// Guestbook
+// ============================================================
+
+export const guestbookApi = {
+  getList: (params: { page?: number; page_size?: number }) => {
+    const qs = buildQuery(params)
+    return request<PaginatedData<GuestbookMessageItem>>(`/guestbook/messages?${qs}`)
+  },
+  create: (data: GuestbookCreateRequest) =>
+    request<GuestbookMessageItem>("/guestbook/messages", { method: "POST", body: JSON.stringify(data) }),
+}
+
+// ============================================================
 // Site Config (public)
 // ============================================================
 
@@ -511,6 +528,8 @@ export const adminCardKeyApi = {
   },
   invalidate: (id: string) =>
     request<null>(`/admin/card-keys/${id}/invalidate`, { method: "POST" }),
+  cancelCard: (id: string) =>
+    request<CardKeyCancelResult>(`/admin/card-keys/${id}/cancel-card`, { method: "POST" }),
   batchInvalidate: (params: { product_id: string; spec_id?: string | null }) => {
     const qs = buildQuery(params)
     return request<{ invalidated_count: number }>(`/admin/card-keys/batch-invalidate?${qs}`, { method: "POST" })
@@ -573,6 +592,8 @@ export const adminCouponApi = {
     name: string
     discount_type: CouponDiscountType
     discount_value: number
+    max_uses: number
+    product_ids?: string[]
     is_enabled?: boolean
     remark?: string
   }) =>
@@ -582,12 +603,26 @@ export const adminCouponApi = {
     name: string
     discount_type: CouponDiscountType
     discount_value: number
+    max_uses: number
+    product_ids: string[]
     is_enabled: boolean
     remark: string
   }>) =>
     request<null>(`/admin/coupons/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id: string) =>
     request<null>(`/admin/coupons/${id}`, { method: "DELETE" }),
+}
+
+export const adminGuestbookApi = {
+  getList: (params: { page?: number; page_size?: number }) => {
+    const qs = buildQuery(params)
+    return request<PaginatedData<AdminGuestbookItem>>(`/admin/guestbook/messages?${qs}`)
+  },
+  updateVisibility: (id: string, isVisible: boolean) =>
+    request<null>(`/admin/guestbook/messages/${id}/visibility`, {
+      method: "PUT",
+      body: JSON.stringify({ is_visible: isVisible }),
+    }),
 }
 
 // ============================================================

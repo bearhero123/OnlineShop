@@ -5,15 +5,17 @@ import { AlertCircle, Edit, Plus, Tag, ToggleLeft, ToggleRight, Trash2, X } from
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useLocale } from "@/lib/context"
-import { adminCouponApi } from "@/services/api"
+import { adminCouponApi, adminProductApi } from "@/services/api"
 import { Modal } from "@/components/ui/modal"
-import type { AdminCouponItem, CouponDiscountType } from "@/types"
+import type { AdminCouponItem, CouponApplicableProduct, CouponDiscountType, ProductDetail } from "@/types"
 
 type CouponForm = {
   name: string
   code: string
   discount_type: CouponDiscountType
   discount_value: string
+  max_uses: string
+  product_ids: string[]
   is_enabled: boolean
   remark: string
 }
@@ -23,6 +25,8 @@ const EMPTY_FORM: CouponForm = {
   code: "",
   discount_type: "FIXED",
   discount_value: "",
+  max_uses: "1",
+  product_ids: [],
   is_enabled: true,
   remark: "",
 }
@@ -30,6 +34,7 @@ const EMPTY_FORM: CouponForm = {
 export default function AdminCouponsPage() {
   const { t } = useLocale()
   const [coupons, setCoupons] = useState<AdminCouponItem[]>([])
+  const [products, setProducts] = useState<ProductDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -37,6 +42,7 @@ export default function AdminCouponsPage() {
   const [editCoupon, setEditCoupon] = useState<AdminCouponItem | null>(null)
   const [formData, setFormData] = useState<CouponForm>(EMPTY_FORM)
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({})
+  const [productKeyword, setProductKeyword] = useState("")
   const codeRef = useRef<HTMLInputElement>(null)
 
   const fetchCoupons = async () => {
@@ -51,14 +57,25 @@ export default function AdminCouponsPage() {
     }
   }
 
+  const fetchProducts = async () => {
+    try {
+      const data = await adminProductApi.getList({ page: 1, page_size: 1000 })
+      setProducts(data.list)
+    } catch {
+      setProducts([])
+    }
+  }
+
   useEffect(() => {
     fetchCoupons()
+    fetchProducts()
   }, [])
 
   const resetForm = () => {
     setFormData(EMPTY_FORM)
     setFormErrors({})
     setEditCoupon(null)
+    setProductKeyword("")
   }
 
   const handleCloseModal = () => {
@@ -73,11 +90,28 @@ export default function AdminCouponsPage() {
       code: coupon.code,
       discount_type: coupon.discount_type,
       discount_value: String(coupon.discount_value),
+      max_uses: String(coupon.max_uses),
+      product_ids: coupon.applicable_products.map(product => product.id),
       is_enabled: coupon.is_enabled,
       remark: coupon.remark || "",
     })
     setFormErrors({})
+    setProductKeyword("")
     setShowModal(true)
+  }
+
+  const hasSameProductIds = (left: string[], right: string[]) => {
+    const normalize = (ids: string[]) => [...new Set(ids)].sort().join("|")
+    return normalize(left) === normalize(right)
+  }
+
+  const toggleProduct = (productId: string) => {
+    setFormData(prev => {
+      if (prev.product_ids.includes(productId)) {
+        return { ...prev, product_ids: prev.product_ids.filter(id => id !== productId) }
+      }
+      return { ...prev, product_ids: [...prev.product_ids, productId] }
+    })
   }
 
   const handleSave = async () => {
@@ -85,6 +119,7 @@ export default function AdminCouponsPage() {
     if (!formData.name.trim()) errors.name = true
     if (!formData.code.trim()) errors.code = true
     if (!formData.discount_value.trim()) errors.discount_value = true
+    if (!formData.max_uses.trim()) errors.max_uses = true
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors)
       toast.error("请填写完整的优惠码信息")
@@ -92,15 +127,36 @@ export default function AdminCouponsPage() {
       return
     }
 
+    const maxUses = Number(formData.max_uses)
+    if (!Number.isInteger(maxUses) || maxUses < 1) {
+      setFormErrors(prev => ({ ...prev, max_uses: true }))
+      toast.error("可使用次数必须为大于 0 的整数")
+      return
+    }
+
     setSaving(true)
     try {
-      const payload = {
+      const normalizedProductIds = [...new Set(formData.product_ids)]
+      const payload: {
+        name: string
+        code: string
+        discount_type: CouponDiscountType
+        discount_value: number
+        max_uses: number
+        product_ids?: string[]
+        is_enabled: boolean
+        remark?: string
+      } = {
         name: formData.name.trim(),
         code: formData.code.trim().toUpperCase(),
         discount_type: formData.discount_type,
         discount_value: Number(formData.discount_value),
+        max_uses: maxUses,
         is_enabled: formData.is_enabled,
         remark: formData.remark.trim() || undefined,
+      }
+      if (!editCoupon || !hasSameProductIds(normalizedProductIds, editCoupon.applicable_products.map(product => product.id))) {
+        payload.product_ids = normalizedProductIds
       }
       if (editCoupon) {
         await adminCouponApi.update(editCoupon.id, payload)
@@ -138,6 +194,16 @@ export default function AdminCouponsPage() {
     }
   }
 
+  const renderApplicableProducts = (applicableProducts: CouponApplicableProduct[]) => {
+    if (applicableProducts.length === 0) {
+      return "全部商品"
+    }
+    if (applicableProducts.length <= 3) {
+      return applicableProducts.map(product => product.title).join("、")
+    }
+    return `${applicableProducts.slice(0, 3).map(product => product.title).join("、")} 等 ${applicableProducts.length} 件商品`
+  }
+
   const renderDiscount = (coupon: AdminCouponItem) => {
     if (coupon.discount_type === "FIXED") {
       return `立减 ${Number(coupon.discount_value).toFixed(2)}`
@@ -147,12 +213,31 @@ export default function AdminCouponsPage() {
 
   const renderStatus = (coupon: AdminCouponItem) => {
     if (!coupon.is_enabled) return { label: "已停用", className: "bg-slate-500/10 text-slate-600" }
-    if (coupon.status === "USED") return { label: "已使用", className: "bg-emerald-500/10 text-emerald-600" }
-    if (coupon.status === "LOCKED") return { label: "待支付占用中", className: "bg-amber-500/10 text-amber-600" }
+    if (coupon.status === "USED") return { label: "已耗尽", className: "bg-emerald-500/10 text-emerald-600" }
+    if (coupon.status === "LOCKED") return { label: "占用中", className: "bg-amber-500/10 text-amber-600" }
     return { label: "可用", className: "bg-blue-500/10 text-blue-600" }
   }
 
-  const isRuleLocked = editCoupon != null && editCoupon.status !== "AVAILABLE"
+  const isRuleLocked = editCoupon != null && (editCoupon.status !== "AVAILABLE" || editCoupon.used_count > 0)
+  const visibleProducts = products.filter(product => {
+    if (!productKeyword.trim()) {
+      return true
+    }
+    return product.title.toLowerCase().includes(productKeyword.trim().toLowerCase())
+  })
+  const selectedProductMap = new Map<string, string>()
+  for (const product of products) {
+    selectedProductMap.set(product.id, product.title)
+  }
+  for (const product of editCoupon?.applicable_products ?? []) {
+    if (!selectedProductMap.has(product.id)) {
+      selectedProductMap.set(product.id, product.title)
+    }
+  }
+  const selectedProducts = formData.product_ids.map(productId => ({
+    id: productId,
+    title: selectedProductMap.get(productId) ?? "商品已删除",
+  }))
 
   if (loading) {
     return (
@@ -229,11 +314,14 @@ export default function AdminCouponsPage() {
 
               <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                 <p>创建时间：{new Date(coupon.created_at).toLocaleString()}</p>
+                <p>已使用：<span className="font-medium text-foreground">{coupon.used_count}</span> / {coupon.max_uses} 次</p>
+                <p>剩余次数：<span className="font-medium text-foreground">{coupon.remaining_uses}</span> 次</p>
+                <p>适用商品：<span className="text-foreground">{renderApplicableProducts(coupon.applicable_products)}</span></p>
                 {coupon.status === "LOCKED" && coupon.reserved_order_id && (
-                  <p>占用订单：<span className="font-mono text-xs text-foreground">{coupon.reserved_order_id}</span></p>
+                  <p>当前占用订单：<span className="font-mono text-xs text-foreground">{coupon.reserved_order_id}</span></p>
                 )}
-                {coupon.status === "USED" && coupon.used_order_id && (
-                  <p>使用订单：<span className="font-mono text-xs text-foreground">{coupon.used_order_id}</span></p>
+                {coupon.used_count > 0 && coupon.used_order_id && (
+                  <p>最近使用订单：<span className="font-mono text-xs text-foreground">{coupon.used_order_id}</span></p>
                 )}
                 {coupon.remark && <p>备注：<span className="text-foreground">{coupon.remark}</span></p>}
               </div>
@@ -275,7 +363,7 @@ export default function AdminCouponsPage() {
         <div className="flex flex-col gap-4 p-6">
           {isRuleLocked && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-              已锁定或已使用的优惠码只建议修改名称、备注和启停状态，核心规则不能再改。
+              只要优惠码已经被使用过，或当前有订单正在占用，就只建议修改名称、备注和启停状态，核心规则不能再改。
             </div>
           )}
 
@@ -339,6 +427,122 @@ export default function AdminCouponsPage() {
                 disabled={isRuleLocked}
               />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-foreground">可使用次数</label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={formData.max_uses}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, max_uses: e.target.value }))
+                setFormErrors(prev => ({ ...prev, max_uses: false }))
+              }}
+              className={cn("h-10 rounded-lg border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2", formErrors.max_uses ? "border-destructive ring-destructive/20" : "border-input focus:ring-ring")}
+              placeholder="例如：1"
+              disabled={isRuleLocked}
+            />
+            <p className="text-xs text-muted-foreground">填 1 表示一次性优惠码，填 10 表示最多可成功使用 10 次。</p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">适用商品</label>
+                <p className="text-xs text-muted-foreground">不选择商品时，默认对全部商品生效。</p>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {formData.product_ids.length === 0 ? "当前：全部商品" : `已选 ${formData.product_ids.length} 件商品`}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={productKeyword}
+              onChange={(e) => setProductKeyword(e.target.value)}
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="搜索商品名称"
+            />
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <button
+                type="button"
+                className="rounded-md border border-input px-2.5 py-1 text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  if (visibleProducts.length === 0) return
+                  setFormData(prev => ({
+                    ...prev,
+                    product_ids: [...new Set([...prev.product_ids, ...visibleProducts.map(product => product.id)])],
+                  }))
+                }}
+                disabled={isRuleLocked || visibleProducts.length === 0}
+              >
+                选中当前筛选结果
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-input px-2.5 py-1 text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setFormData(prev => ({ ...prev, product_ids: [] }))}
+                disabled={isRuleLocked || formData.product_ids.length === 0}
+              >
+                清空限制
+              </button>
+              {isRuleLocked && (
+                <span className="text-amber-600">该优惠码已被使用或占用，适用商品不可再修改。</span>
+              )}
+            </div>
+
+            <div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-muted/10">
+              {products.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-muted-foreground">暂无可选商品</p>
+              ) : visibleProducts.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-muted-foreground">没有匹配的商品</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {visibleProducts.map((product) => {
+                    const checked = formData.product_ids.includes(product.id)
+                    return (
+                      <label
+                        key={product.id}
+                        className={cn(
+                          "flex cursor-pointer items-start gap-3 px-3 py-2.5 transition-colors hover:bg-accent/60",
+                          checked && "bg-primary/5"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleProduct(product.id)}
+                          className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                          disabled={isRuleLocked}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{product.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {product.is_enabled === false ? "已下架" : "上架中"} · 基础价 {Number(product.base_price).toFixed(2)}
+                          </p>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {selectedProducts.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedProducts.map((product) => (
+                  <span
+                    key={product.id}
+                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                  >
+                    {product.title}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">

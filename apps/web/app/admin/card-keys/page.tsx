@@ -5,6 +5,7 @@ import {
   Upload,
   Eye,
   Ban,
+  Undo2,
   Package,
   KeyRound,
   AlertCircle,
@@ -228,6 +229,8 @@ export default function AdminCardKeysPage() {
   // Single invalidate confirmation state
   const [singleInvalidateTarget, setSingleInvalidateTarget] = useState<CardKeyListItem | null>(null)
   const [singleInvalidating, setSingleInvalidating] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<CardKeyListItem | null>(null)
+  const [cancellingCard, setCancellingCard] = useState(false)
 
   const handleBatchInvalidate = async () => {
     if (!showInvalidateConfirm) return
@@ -266,6 +269,32 @@ export default function AdminCardKeysPage() {
       toast.error(err instanceof Error ? err.message : "作废失败")
     } finally {
       setSingleInvalidating(false)
+    }
+  }
+
+  const handleCancelSoldCard = async () => {
+    if (!cancelTarget) return
+    setCancellingCard(true)
+    try {
+      const result = await withMockFallback(
+        () => adminCardKeyApi.cancelCard(cancelTarget.id),
+        () => ({
+          card_key_id: cancelTarget.id,
+          code: cancelTarget.content,
+          status: "cancelled",
+          refund_amount: 0,
+          cancelled_at: new Date().toISOString(),
+          already_cancelled: false,
+        })
+      )
+      const refundText = typeof result.refund_amount === "number" ? `，退款 $${result.refund_amount.toFixed(2)}` : ""
+      toast.success(result.already_cancelled ? `该卡密已完成销卡${refundText}` : `销卡成功${refundText}`)
+      setCancelTarget(null)
+      if (detailItem) fetchDetailKeys(detailItem, detailPage)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "销卡失败")
+    } finally {
+      setCancellingCard(false)
     }
   }
 
@@ -587,10 +616,10 @@ export default function AdminCardKeysPage() {
               <table className="w-full text-sm table-fixed" onCopy={(e) => { const t = window.getSelection()?.toString(); if (t) { e.clipboardData.setData("text/plain", stripInvisible(t)); e.preventDefault() } }}>
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="w-[36%] px-3 py-2 text-left font-medium text-muted-foreground">卡密内容</th>
-                    <th className="w-[8%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">状态</th>
-                    <th className="w-[16%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">创建时间</th>
-                    <th className="w-[16%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">订单号</th>
+                    <th className="w-[30%] px-3 py-2 text-left font-medium text-muted-foreground">卡密内容</th>
+                    <th className="w-[18%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">状态</th>
+                    <th className="w-[14%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">创建时间</th>
+                    <th className="w-[14%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">订单号</th>
                     <th className="w-[16%] px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">售出时间</th>
                     <th className="w-[8%] px-3 py-2 text-right font-medium text-muted-foreground whitespace-nowrap">操作</th>
                   </tr>
@@ -599,16 +628,33 @@ export default function AdminCardKeysPage() {
                   {detailKeys.map((key) => (
                     <tr key={key.id} className="border-b border-border/50 last:border-0">
                       <td className="px-3 py-2 font-mono text-xs text-foreground break-all">{key.content}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium",
-                          key.status === "AVAILABLE" && "bg-emerald-500/10 text-emerald-600",
-                          key.status === "SOLD" && "bg-blue-500/10 text-blue-600",
-                          key.status === "LOCKED" && "bg-amber-500/10 text-amber-600",
-                          key.status === "INVALID" && "bg-red-500/10 text-red-600",
-                        )}>
-                          {key.status === "AVAILABLE" ? "可用" : key.status === "SOLD" ? "已售" : key.status === "LOCKED" ? "锁定" : "已作废"}
-                        </span>
+                      <td className="px-3 py-2">
+                        <div className="flex flex-col gap-1">
+                          <span className={cn(
+                            "w-fit rounded-full px-2 py-0.5 text-xs font-medium",
+                            key.status === "AVAILABLE" && "bg-emerald-500/10 text-emerald-600",
+                            key.status === "SOLD" && "bg-blue-500/10 text-blue-600",
+                            key.status === "LOCKED" && "bg-amber-500/10 text-amber-600",
+                            key.status === "INVALID" && "bg-red-500/10 text-red-600",
+                          )}>
+                            {key.status === "AVAILABLE" ? "可用" : key.status === "SOLD" ? "已售" : key.status === "LOCKED" ? "锁定" : "已作废"}
+                          </span>
+                          {key.card_cancel_status && (
+                            <div className="space-y-0.5 text-[11px] leading-4">
+                              <span className="inline-flex rounded-full bg-violet-500/10 px-2 py-0.5 text-violet-600">
+                                已销卡
+                              </span>
+                              {key.card_cancelled_at && (
+                                <p className="text-muted-foreground">
+                                  {new Date(key.card_cancelled_at).toLocaleString()}
+                                </p>
+                              )}
+                              {typeof key.card_cancel_refund_amount === "number" && (
+                                <p className="text-emerald-600">退款 ${key.card_cancel_refund_amount.toFixed(2)}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(key.created_at).toLocaleString()}
@@ -628,6 +674,16 @@ export default function AdminCardKeysPage() {
                             onClick={() => setSingleInvalidateTarget(key)}
                           >
                             <Ban className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {key.status === "SOLD" && !key.card_cancel_status && (
+                          <button
+                            type="button"
+                            className="rounded-md p-1 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-600 transition-colors"
+                            title="对已售卡密执行销卡"
+                            onClick={() => setCancelTarget(key)}
+                          >
+                            <Undo2 className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </td>
@@ -737,6 +793,45 @@ export default function AdminCardKeysPage() {
               disabled={invalidating}
             >
               {invalidating ? "作废中..." : "确认作废"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={cancelTarget !== null} onClose={() => setCancelTarget(null)} className="max-w-md">
+        <div className="flex flex-col gap-4 p-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-amber-500/10 p-2">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-foreground">确认执行销卡</h3>
+              {cancelTarget && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  该操作会以管理员身份调用外部销卡接口，并触发对应退款流程。请确认当前卡密已售出且需要由后台执行销卡。
+                  <br />
+                  <code className="mt-1 inline-block rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground break-all">
+                    {cancelTarget.content}
+                  </code>
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              className="rounded-lg border border-input bg-transparent px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              onClick={() => setCancelTarget(null)}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500/90 transition-colors disabled:opacity-50"
+              onClick={handleCancelSoldCard}
+              disabled={cancellingCard}
+            >
+              {cancellingCard ? "销卡中..." : "确认销卡"}
             </button>
           </div>
         </div>
